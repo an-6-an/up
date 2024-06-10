@@ -1,0 +1,389 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Учёт справок в ВУЗе</title> <!-- Заголовок вкладки -->
+    <style>
+        td {
+            padding: 5px
+        }
+
+        button {
+            margin: 5px
+        }
+    </style>
+</head>
+<body>
+    <!-- Таблица 1 -->
+    <h2>Список студентов</h2>
+    <div>
+        <input type="hidden" id="userId" />
+        <p>
+            ФИО:<br />
+            <input id="userName" />
+        </p>
+        <p>
+            Группа:<br />
+            <input id="userGroop" />
+        </p>
+        <p>
+            <button id="saveBtn">Сохранить</button>
+            <button id="resetBtn">Сбросить</button>
+        </p>
+    </div>
+    <table>
+        <thead><tr>
+                <th>ID студента &nbsp</th>
+                <th>ФИО</th>
+                <th>Группа</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+    <!-- Таблица 2 -->
+    <h2>Справки</h2>
+    <div>
+        <p>
+            <input type="hidden" id="spravki" />
+        </p>
+        <p>
+            ID студента:<br />
+            <input id="spravkiUser_id" />
+        </p>
+        <p>
+            Номер справки:<br />
+            <input id="spravkinomer_spravki" />
+        </p>
+        <p>
+            <button id="saveBtn1">Сохранить</button>
+            <button id="resetBtn1">Сбросить</button>
+        </p>
+    </div>
+    <table id="t2">
+        <thead>
+            <tr>
+                <th>ID справки &nbsp</th>
+                <th>ID студента &nbsp</th>
+                <th>Номер справки</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <!-- Скрипт вывода данных в таблицы -->
+    <script>
+        // Получение всех студентов
+        async function getUsers() {
+            // отправляем запрос и получаем ответ
+            const response = await fetch("/api/users", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                // получаем данные
+                const users = await response.json();
+                // выводим полученные элементы в таблице
+                const rows = document.querySelector("#t1 tbody");
+                users.forEach(user => rows.append(row(user)));
+            }
+            else {
+                // получаем сообщение об ошибке
+                const error = await response.json();
+                // и выводим его на консоль
+                console.log(error.message);
+            }
+        }
+        // Получение всех справок
+        async function getSpravki() {
+            const response = await fetch("/api/spravki", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const spravki = await response.json();
+                const rows = document.querySelector("#t2 tbody");
+                spravki.forEach(spravki => rows.append(row1(spravki)));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // Получение одного студента
+        async function getUser(id) {
+            // отправляем запрос и получаем ответ
+            const response = await fetch(`/api/users/${id}`, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                // получаем данные
+                const user = await response.json();
+                // выводим в панель ввода данных
+                document.getElementById("userId").value = user.id;
+                document.getElementById("userName").value = user.name;
+                document.getElementById("userGroop").value = user.groop;
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // Получение одной справки
+        async function getSpravki(id) {
+            const response = await fetch(`/api/spravki/${id}`, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const spravki = await response.json();
+                document.getElementById("spravkiId").value = spravki.id;
+                document.getElementById("spravkiUser_id").value = spravki.user_id;
+                document.getElementById("spravkiNomer_spravki").value = spravki.nomer_spravki;
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // Добавление студента
+        async function createUser(userName) {
+            // отправляем запрос и получаем ответ
+            const response = await fetch("api/users", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json", "Content-Type":
+                        "application/json"
+                },
+                // отправляем введённые данные
+                body: JSON.stringify({
+                    name: username
+                    groop: usergroop
+                })
+            });
+            if (response.ok === true) {
+                // получаем данные
+                const user = await response.json();
+                // добавляем в таблицу
+                document.querySelector("#t1 tbody").append(row(user));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // справки
+        async function createSpravki(spravkiUser_id, spravkiNomer_spravki) {
+            const response = await fetch("api/spravki", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json", "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: spravkiUser_id
+                    nomer_spravki: parseInt(spravkiNomer_spravki, 10)
+                })
+            });
+            if (response.ok === true) {
+                const transaction = await response.json();
+                document.querySelector("#t2 tbody").append(row1(transaction));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // Изменение пользователя
+        async function editUser(userId, userName, userGroop) {
+            // отправляем запрос и получаем ответ
+            const response = await fetch("api/users", {
+                method: "PUT",
+                headers: {
+                    "Accept": "application/json", "Content-Type":
+                        "application/json"
+                },
+                // отправляем введённые данные
+                body: JSON.stringify({
+                    id: userId,
+                    name: userName
+                    groop: userGroop
+                })
+            });
+            if (response.ok === true) {
+                // получаем данные
+                const user = await response.json();
+                // добавляем в таблицу
+                document.querySelector(`#t1 tr[datarowid='${user.id}']`).replaceWith(row(user));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // справки
+        async function editSpravki(spravkiId, spravkiUser_id, spravkiNomer_spravki) {
+            const response = await fetch("api/spravki", {
+                method: "PUT",
+                headers: {
+                    "Accept": "application/json", "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    id: spravkiId,
+                    user_id: spravkiUser_id,
+                    nomer_spravki: parseInt(spravkiNomer_spravki, 10)
+                })
+            });
+            if (response.ok === true) {
+                const transaction = await response.json();
+                document.querySelector(`#t2 tr[datarowid='${transaction.id}']`).replaceWith(row1(transaction));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // Удаление пользователя
+        async function deleteUser(id) {
+            // отправляем запрос и получаем ответ
+            const response = await fetch(`/api/users/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "Accept": "application/json", "Content-Type":
+                        "application/json"
+                }
+            });
+            if (response.ok === true) {
+                // удаляем из таблицы
+                document.querySelector(`#t1 tr[data-rowid='${id}']`).remove();
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // справки
+        async function deleteSpravki(id) {
+            const response = await fetch(`/api/spravki/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "Accept": "application/json", "Content-Type":
+                        "application/json"
+                }
+            });
+            if (response.ok === true) {
+                document.querySelector(`#t2 tr[data-rowid='${id}']`).remove();
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+        // сброс данных формы после отправки для студентов
+        function reset() {
+            document.getElementById("userId").value =
+                document.getElementById("userName").value =
+                document.getElementById("userGroop").value = "";
+        }
+        // справок
+        function reset1() {
+            document.getElementById("spravkiId").value =
+                document.getElementById("spravkiUser_id").value =
+                document.getElementById("spravkiNomer_spravki").value = "";
+        }
+        // сброс значений формы студентов
+        document.getElementById("resetBtn").addEventListener("click", () =>
+            reset());
+        // справок
+        document.getElementById("resetBtn1").addEventListener("click", () =>
+            reset1());
+        // отправка формы студентов
+        document.getElementById("saveBtn").addEventListener("click", async () => {
+            const id = document.getElementById("userId").value;
+            const name = document.getElementById("userName").value;
+            const groop = document.getElementById("userGroop").value;
+            if (id === "")
+                await createUser(name);
+            else
+                await editUser(id, name, groop);
+            reset();
+        });
+        // справок
+        document.getElementById("saveBtn1").addEventListener("click", async () =>
+        {
+            const id = document.getElementById("spravkiId").value;
+            const user_id = document.getElementById("spravkiUser_id").value;
+            const nomer_spravki = document.getElementById("spravkiNomer_spravki").value;
+            if (id === "")
+                await createSpravki(user_id, nomer_spravki);
+            else
+                await editSpravki(id, user_id, nomer_spravki);
+            reset1();
+        });
+        // создание строк для таблицы студентов
+        function row(user) {
+            // создание строки
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", user.id);
+            // добавление в строку ID
+            const idTd = document.createElement("td");
+            idTd.append(user.id);
+            tr.append(idTd);
+            // добавление в строку имени
+            const nameTd = document.createElement("td");
+            nameTd.append(user.name);
+            tr.append(nameTd);
+            // добавление в строку группы
+            const groopTd = document.createElement("td");
+            groopTd.append(groop.name);
+            tr.append(groopTd);
+            // добавление в строку активных кнопок
+            const linksTd = document.createElement("td");
+            // кнопка "Изменить"
+            const editLink = document.createElement("button");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", async () => await
+                getUser(user.id));
+            linksTd.append(editLink);
+            // кнопка "Удалить"
+            const removeLink = document.createElement("button");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", async () => await
+                deleteUser(user.id));
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+            return tr;
+        }
+        // справок
+        function row1(spravki) {
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", spravki.id);
+            const idTd = document.createElement("td");
+            idTd.append(spravki.id);
+            tr.append(idTd);
+            const user_idTd = document.createElement("td");
+            user_idTd.append(spravki.user_id);
+            tr.append(user_idTd);
+            const nomer_spravkiTd = document.createElement("td");
+            nomer_spravkiTd.append(spravki.nomer_spravki);
+            tr.append(nomer_spravki Td);
+            const linksTd = document.createElement("td");
+            const editLink = document.createElement("button");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", async () => await
+                getSpravki(spravki.id));
+            linksTd.append(editLink);
+            const removeLink = document.createElement("button");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", async () => await
+                deleteSpravki(spravki.id));
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+            return tr;
+        }
+        // отображение всех таблиц на странице
+        getUsers();
+        getSpravki();
+    </script>
+</body>
+</html>
